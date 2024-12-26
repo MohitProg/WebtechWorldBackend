@@ -7,50 +7,65 @@ import Usermodel from "../Modals/Usermodel.js";
 import { SendAddBlogNotification } from "../Middleware/SendMail.js";
 import { trusted } from "mongoose";
 const Getblogdata = async (req, res) => {
- 
-  const { page, limit, search } = req.query;
+  const { page, limit, search, category } = req.query;
+  console.log(req.query)
   const pagevalue = parseInt(page) || 1;
   const limitvalue = parseInt(limit) || 10;
   const skip = (pagevalue - 1) * limitvalue;
 
+  const ctgry=category==="All Blogs"?"":category
   try {
     let getBlogs;
     let totalblog;
 
-    if (search?.length > 0 && search !== "undefined") {
+   
       getBlogs = await BlogModel.find({
-        $or: [
-          { title: { $regex: search, $options: "i" } },
-          { content: { $regex: search, $options: "i" } },
-          { summary: { $regex: search, $options: "i" } },
-        ],
+        $and: [
+          {
+            $or: [
+              { title: { $regex: search, $options: "i" } },
+              { content: { $regex: search, $options: "i" } },
+              { summary: { $regex: search, $options: "i" } }
+            ]
+          },
+          {
+            category: {
+              $elemMatch: {
+                $regex: `.*${ctgry}.*`,  // Apply regex
+                $options: "i"               
+              }
+            }
+          }
+        ]
       })
         .skip(skip)
         .limit(limitvalue)
         .sort({ createdAt: -1 });
 
-        totalblog = (await BlogModel.find({
-          $or: [
-            { title: { $regex: search, $options: "i" } },
-            { content: { $regex: search, $options: "i" } },
-            { summary: { $regex: search, $options: "i" } },
-          ],
-        })).length;
-         
+      totalblog = (
+        await BlogModel.find({
+          $and: [
+            {
+              $or: [
+                { title: { $regex: search, $options: "i" } },
+                { content: { $regex: search, $options: "i" } },
+                { summary: { $regex: search, $options: "i" } }
+              ]
+            },
+            {
+              category: {
+                $elemMatch: {
+                  $regex: `.*${category}.*`,  // Apply regex
+                  $options: "i"               // Case-insensitive search
+                }
+              }
+            }
+          ]
+        })
+      ).length;
+   
 
-
-    } else {
-      getBlogs = await BlogModel.find()
-        .skip(skip)
-        .limit(limitvalue)
-        .sort({ createdAt: -1 });
-
-        totalblog = (await BlogModel.find())?.length;
-
-     
-    }
-
-    console.log("total blog",totalblog)
+    console.log("total blog", totalblog);
 
     return res
       .status(201)
@@ -90,7 +105,7 @@ const PostBlogdata = async (req, res) => {
       });
 
       console.log(emailArray);
-      await SendAddBlogNotification(emailArray, title,newBlog?._id);
+      await SendAddBlogNotification(emailArray, title, newBlog?._id);
 
       return res
         .status(201)

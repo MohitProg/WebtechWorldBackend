@@ -25,7 +25,7 @@ route.delete("/deleteblog/:id",AuthCheck,DeleteBlogdata)
 // like and dislike the blogs 
 route.post("/likeanddislike/:id",AuthCheck,LikeAndDisliketheblog)
 
-
+    
 
 
 
