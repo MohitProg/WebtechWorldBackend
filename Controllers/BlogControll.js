@@ -8,62 +8,60 @@ import { SendAddBlogNotification } from "../Middleware/SendMail.js";
 import { trusted } from "mongoose";
 const Getblogdata = async (req, res) => {
   const { page, limit, search, category } = req.query;
-  console.log(req.query)
+  console.log(req.query);
   const pagevalue = parseInt(page) || 1;
   const limitvalue = parseInt(limit) || 10;
   const skip = (pagevalue - 1) * limitvalue;
 
-  const ctgry=category==="All Blogs"?"":category
+  const ctgry = category === "All Blogs" ? "" : category;
   try {
     let getBlogs;
     let totalblog;
 
-   
-      getBlogs = await BlogModel.find({
+    getBlogs = await BlogModel.find({
+      $and: [
+        {
+          $or: [
+            { title: { $regex: search, $options: "i" } },
+            { content: { $regex: search, $options: "i" } },
+            { summary: { $regex: search, $options: "i" } },
+          ],
+        },
+        {
+          category: {
+            $elemMatch: {
+              $regex: `.*${ctgry}.*`, // Apply regex
+              $options: "i",
+            },
+          },
+        },
+      ],
+    })
+      .skip(skip)
+      .limit(limitvalue)
+      .sort({ createdAt: -1 }).populate("Author");
+
+    totalblog = (
+      await BlogModel.find({
         $and: [
           {
             $or: [
               { title: { $regex: search, $options: "i" } },
               { content: { $regex: search, $options: "i" } },
-              { summary: { $regex: search, $options: "i" } }
-            ]
+              { summary: { $regex: search, $options: "i" } },
+            ],
           },
           {
             category: {
               $elemMatch: {
-                $regex: `.*${ctgry}.*`,  // Apply regex
-                $options: "i"               
-              }
-            }
-          }
-        ]
-      })
-        .skip(skip)
-        .limit(limitvalue)
-        .sort({ createdAt: -1 });
-
-      totalblog = (
-        await BlogModel.find({
-          $and: [
-            {
-              $or: [
-                { title: { $regex: search, $options: "i" } },
-                { content: { $regex: search, $options: "i" } },
-                { summary: { $regex: search, $options: "i" } }
-              ]
+                $regex: `.*${category}.*`, // Apply regex
+                $options: "i", // Case-insensitive search
+              },
             },
-            {
-              category: {
-                $elemMatch: {
-                  $regex: `.*${category}.*`,  // Apply regex
-                  $options: "i"               // Case-insensitive search
-                }
-              }
-            }
-          ]
-        })
-      ).length;
-   
+          },
+        ],
+      })
+    ).length;
 
     console.log("total blog", totalblog);
 
