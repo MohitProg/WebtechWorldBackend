@@ -220,7 +220,7 @@ const GetUserblogsdata = async (req, res) => {
   try {
     const getuserblog = await BlogModel.find({ Author: id._id }).sort({
       createdAt: -1,
-    });
+    }).populate("Author");
     return res
       .status(201)
       .send(new ApiResponse(200, getuserblog, "getuser blog"));
