@@ -21,7 +21,9 @@ app.use("/api/v1/blog",blogroute)
 app.use("/api/v1/user/project",projectroute)
 app.use("/api/v1/user/blog/comment",commentRoute)
 
-
+app.get("/",(req,res)=>{
+    return res.send("Website is running ")
+})
 
 
 
