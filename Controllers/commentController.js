@@ -1,7 +1,7 @@
 import CommentModal from "../Modals/CommentModal.js";
 import { ApiResponse } from "../Utils/ApiResponse.js";
 
-export const getComment=async(req,res)=>{
+export const getComment=async(req,res,next)=>{
     const blogid=req.params.id
     try {
 
@@ -11,8 +11,8 @@ export const getComment=async(req,res)=>{
         .send(new ApiResponse(200,comments, "get comment of the blog "));
         
     } catch (error) {
-        console.log(error)
-        res.send({ success: false, message: error.message });
+        next(error)
+        
 
     }
 
@@ -20,7 +20,7 @@ export const getComment=async(req,res)=>{
 
 
 // post comment on a blog 
-export const postComment=async(req,res)=>{
+export const postComment=async(req,res,next)=>{
     const userid=req.newuser._id
     const blogid=req.params.id
     try {
@@ -45,15 +45,15 @@ export const postComment=async(req,res)=>{
     
 
     } catch (error) {
-        console.log(error);
-        res.send({ success: false, message: error.message });
+        next(error)
+        
     }
     
 }
 
 // delete comment on blog 
 
-export const deletecomment=async(req,res)=>{
+export const deletecomment=async(req,res,next)=>{
     const userid=req.newuser._id
     const commentid=req.params.id
 
@@ -66,8 +66,8 @@ export const deletecomment=async(req,res)=>{
         
         
     } catch (error) {
-        console.log(error);
-        res.send({ success: false, message: error.message });
+        next(error)
+        
     }
 
     

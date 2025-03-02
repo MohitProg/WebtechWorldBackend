@@ -6,7 +6,12 @@ import { v2 as cloudinary } from "cloudinary";
 import Usermodel from "../Modals/Usermodel.js";
 import { SendAddBlogNotification } from "../Middleware/SendMail.js";
 import { trusted } from "mongoose";
-const Getblogdata = async (req, res) => {
+import TurndownService from "turndown";
+import { ApiError } from "../Utils/ApiError.js";
+
+let turndownService = new TurndownService();
+
+const Getblogdata = async (req, res, next) => {
   const { page, limit, search, category } = req.query;
   console.log(req.query);
   const pagevalue = parseInt(page) || 1;
@@ -39,7 +44,8 @@ const Getblogdata = async (req, res) => {
     })
       .skip(skip)
       .limit(limitvalue)
-      .sort({ createdAt: -1 }).populate("Author");
+      .sort({ createdAt: -1 })
+      .populate("Author");
 
     totalblog = (
       await BlogModel.find({
@@ -63,24 +69,22 @@ const Getblogdata = async (req, res) => {
       })
     ).length;
 
-    console.log("total blog", totalblog);
-
     return res
       .status(201)
       .send(new ApiResponse(200, { getBlogs, totalblog }, "getallblogs"));
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
 // post single blog data
-const PostBlogdata = async (req, res) => {
+const PostBlogdata = async (req, res, next) => {
   const id = req.newuser;
 
   try {
     const { category, title, summary, content } = req.body;
-    console.log(req.body);
+
+    const markdowncontent = turndownService.turndown(content);
 
     if (req.file !== undefined && req?.file?.originalname.length > 0) {
       const filepath = await UploadOnCloudinary(req?.file?.path);
@@ -90,7 +94,7 @@ const PostBlogdata = async (req, res) => {
         title,
         summary,
         file: filepath?.secure_url,
-        content,
+        content: markdowncontent,
       });
 
       await newBlog.save();
@@ -102,24 +106,25 @@ const PostBlogdata = async (req, res) => {
         emailArray?.push(value?.email);
       });
 
-      console.log(emailArray);
       await SendAddBlogNotification(emailArray, title, newBlog?._id);
 
       return res
-        .status(201)
+        .status(200)
         .send(new ApiResponse(200, newBlog, "Blog added successfully"));
+      // throw new ApiResponse(200, newBlog, "Blog added successfully");
     } else {
-      return res.send({ success: false, message: "please select a file" });
+      return res.send(new ApiError(400, "please select a File"));
     }
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    // console.log(error.message);
+
+    next(error);
   }
 };
 
 // update single blog data
 
-const UpdateBlogdata = async (req, res) => {
+const UpdateBlogdata = async (req, res, next) => {
   try {
     const { category, title, summary, content } = req.body;
     const id = req.params.id;
@@ -154,13 +159,12 @@ const UpdateBlogdata = async (req, res) => {
         .send(new ApiResponse(200, UpDateblog, "blog Updated "));
     }
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
 //  delete blog
-const DeleteBlogdata = async (req, res) => {
+const DeleteBlogdata = async (req, res, next) => {
   const userid = req.newuser?._id;
   const id = req.params.id;
 
@@ -189,12 +193,11 @@ const DeleteBlogdata = async (req, res) => {
       .status(201)
       .send(new ApiResponse(200, DeleteBlog, "Blog Delete Successfully "));
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
-const GetBlogbyId = async (req, res) => {
+const GetBlogbyId = async (req, res, next) => {
   const id = req.params.id;
 
   try {
@@ -208,31 +211,31 @@ const GetBlogbyId = async (req, res) => {
       .status(201)
       .send(new ApiResponse(200, blogdata, "single blog data  "));
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
 // get  user blog data
-const GetUserblogsdata = async (req, res) => {
+const GetUserblogsdata = async (req, res, next) => {
   const id = req.newuser;
 
   try {
-    const getuserblog = await BlogModel.find({ Author: id._id }).sort({
-      createdAt: -1,
-    }).populate("Author");
+    const getuserblog = await BlogModel.find({ Author: id._id })
+      .sort({
+        createdAt: -1,
+      })
+      .populate("Author");
     return res
       .status(201)
       .send(new ApiResponse(200, getuserblog, "getuser blog"));
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
 // getblog by category
 
-const GetblogbyCategorys = async (req, res) => {
+const GetblogbyCategorys = async (req, res, next) => {
   const { category } = req.query;
   console.log(req.query);
   const value = category.split(",");
@@ -246,13 +249,12 @@ const GetblogbyCategorys = async (req, res) => {
       .status(201)
       .send(new ApiResponse(200, findblogbycategory, "getuser blog"));
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
 // get recent blog post
-const checkandAddrecentblog = async (req, res) => {
+const checkandAddrecentblog = async (req, res, next) => {
   const userid = req.newuser._id;
   const blogid = req.params.id;
 
@@ -263,9 +265,7 @@ const checkandAddrecentblog = async (req, res) => {
     user = await Usermodel.findOne({ _id: userid });
 
     if (!user) {
-      return res
-        .status(404)
-        .send({ success: false, message: "User not found" });
+      return res.send(new ApiError(400, "user not found"));
     }
 
     // Check if the blog exists in recentBlog
@@ -311,16 +311,13 @@ const checkandAddrecentblog = async (req, res) => {
       .status(201)
       .send(new ApiResponse(200, "", "Updated recent blogs successfully"));
   } catch (error) {
-    console.error(error); // Log the error for debugging
-    return res
-      .status(500)
-      .send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
 // method to get recent blog data
 
-const Getrecentblogdata = async (req, res) => {
+const Getrecentblogdata = async (req, res, next) => {
   const userid = req.newuser._id;
   try {
     const blogdata = await Usermodel.findOne({ _id: userid }).populate(
@@ -332,14 +329,13 @@ const Getrecentblogdata = async (req, res) => {
       .status(201)
       .send(new ApiResponse(200, recentblog, "recent blog data "));
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
 // saved blog data
 
-const SavedBlog = async (req, res) => {
+const SavedBlog = async (req, res, next) => {
   const blogid = req.params.id;
   const userid = req.newuser._id;
 
@@ -391,13 +387,12 @@ const SavedBlog = async (req, res) => {
         );
     }
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
 // get saved blog data
-const GetSavedblogdata = async (req, res) => {
+const GetSavedblogdata = async (req, res, next) => {
   const userid = req.newuser._id;
   try {
     const blogdata = await Usermodel.findOne({ _id: userid }).populate(
@@ -409,14 +404,13 @@ const GetSavedblogdata = async (req, res) => {
       .status(201)
       .send(new ApiResponse(200, savedblogdata, "saved blog data "));
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
 // like the blogs
 
-const LikeAndDisliketheblog = async (req, res) => {
+const LikeAndDisliketheblog = async (req, res, next) => {
   const userid = req.newuser._id;
   const blogid = req.params.id;
 
@@ -458,8 +452,7 @@ const LikeAndDisliketheblog = async (req, res) => {
         .send(new ApiResponse(200, updateblog, "like the blog "));
     }
   } catch (error) {
-    console.log(error);
-    return res.send({ success: false, message: "Internal Server error" });
+    next(error);
   }
 };
 
