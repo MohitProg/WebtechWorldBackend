@@ -10,6 +10,8 @@ import { errorHandler } from "./Utils/ApiError.js";
 
 const app=express();
 app.use(cors());
+app.options('*', cors());
+
 app.use(cookieParser())
 app.use(express.static("public"));
 app.use(express.json())
