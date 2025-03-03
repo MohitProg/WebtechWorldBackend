@@ -14,10 +14,7 @@ app.use(express.static("public"));
 
 app.use(express.json())
 
-app.use(cors({
-    origin:["http://localhost:5173","https://webtechversion2.web.app"],
-    methods:["GET","POST","PUT","DELETE"]
-}));
+app.use(cors());
 
 
 
