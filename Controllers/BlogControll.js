@@ -81,9 +81,9 @@ const Getblogdata = async (req, res, next) => {
 const PostBlogdata = async (req, res, next) => {
   const id = req.newuser;
 
+  console.log(req.file)
   try {
     const { category, title, summary, content } = req.body;
-    console.log(category)
 
     const markdowncontent = turndownService.turndown(content);
 
@@ -117,7 +117,7 @@ const PostBlogdata = async (req, res, next) => {
       return res.send(new ApiError(400, "please select a File"));
     }
   } catch (error) {
-    console.log(error.message);
+    // console.log(error.message);
 
     next(error);
   }
@@ -249,7 +249,7 @@ const GetblogbyCategorys = async (req, res, next) => {
     return res
       .status(201)
       .send(new ApiResponse(200, findblogbycategory, "getuser blog"));
-  } catch (error) { 
+  } catch (error) {
     next(error);
   }
 };

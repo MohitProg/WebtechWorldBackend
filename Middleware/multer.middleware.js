@@ -8,7 +8,7 @@ const storage=multer.diskStorage({
         cb(null,file.originalname)
     }
 })
-
+// const storage = multer.memoryStorage()
 
  const upload=multer({
     storage,
