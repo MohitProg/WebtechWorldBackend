@@ -16,14 +16,15 @@ class ApiError extends Error{
 }
 
 
-export const errorHandler=(err,req,res,next)=>{
-  return res.status(err.statuscode||500).json({
-    success:false,
-    message:err.message||"internal server error",
-    errors:err.errors||[]
-   
-  })
+export const errorHandler = (err, req, res, next) => {
+  console.error("Error:", err); // Log for debugging
 
-}
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+    errors: err.errors || [],
+  });
+};
+
 
 export {ApiError};
