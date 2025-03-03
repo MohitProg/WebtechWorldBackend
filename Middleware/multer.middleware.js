@@ -1,7 +1,14 @@
 import multer from "multer";
+import fs from "fs"
 const storage=multer.diskStorage({
     destination:function(req,file,cb){
-        cb(null,"./public")
+        const uploadPath = path.join(__dirname, 'public');
+
+        // Ensure the folder exists
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null,uploadPath)
     },
 
     filename:function(req,file,cb){
