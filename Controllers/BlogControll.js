@@ -140,7 +140,7 @@ const UpdateBlogdata = async (req, res, next) => {
         summary,
         file: filepath.secure_url,
         content,
-      });
+      },{new:true});
 
       return res
         .status(201)
@@ -153,7 +153,7 @@ const UpdateBlogdata = async (req, res, next) => {
         title,
         summary,
         content,
-      });
+      },{new:true});
 
       return res
         .status(201)
