@@ -1,19 +1,34 @@
-class ApiError extends Error{
-  constructor(statuscode,message="something went wrong",errors=[],stack=""){
-    super(message)
-    this.statuscode=statuscode,
-    this.message=message,
-    this.success=false,
-    this.errors=errors
+class ApiError extends Error {
+  constructor(
+    statuscode,
+    message = "something went wrong",
+    errors = [],
+    stack = ""
+  ) {
+    super(message);
+    (this.statuscode = statuscode),
+      (this.message = message),
+      (this.success = false),
+      (this.errors = errors);
 
-    if(stack){
-      this.stack=stack
-    }else{
-      Error.captureStackTrace(this,this.constructor)
+    if (stack) {
+      this.stack = stack;
+    } else {
+      Error.captureStackTrace(this, this.constructor);
     }
+  }
 
+  //  converting data into  in json object from error object 
+  toJSON() {
+    return {
+      statusCode: this.statusCode,
+      message: this.message,
+      success: this.success,
+      errors: this.errors,
+    };
   }
 }
+
 
 
 export const errorHandler = (err, req, res, next) => {
@@ -26,5 +41,4 @@ export const errorHandler = (err, req, res, next) => {
   });
 };
 
-
-export {ApiError};
+export { ApiError };
